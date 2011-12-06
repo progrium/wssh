@@ -9,13 +9,13 @@ class CommandLineClient(WebSocketClient):
     def opened(self, protocols, extensions):
         WebSocketClient.opened(self, protocols, extensions)
         print "Connected."
-        
+
     def received_message(self, m):
         print m
 
 def main():
     url = sys.argv[1]
-    
+
     try:
         try:
             ws = CommandLineClient(url)
@@ -27,4 +27,4 @@ def main():
             ws.send(raw_input())
     except KeyboardInterrupt:
         ws.close()
-    
+
