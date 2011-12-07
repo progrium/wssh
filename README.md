@@ -4,7 +4,9 @@ wssh ("wish") is a command-line utility/shell for WebSocket inpsired by netcat.
 
 ## Install
 
-	pip install wssh
+	git clone git://github.com/progrium/wssh.git
+	cd wssh
+	python setup.py install
 
 ## Usage
 
