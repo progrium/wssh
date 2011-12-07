@@ -1,30 +1,26 @@
 import sys
+from urlparse import urlparse
 
-from ws4py.exc import HandshakeError
-from ws4py.client.threadedclient import WebSocketClient
-
-#WebSocketClient.upgrade_header = 'X-Upgrade'
-
-class CommandLineClient(WebSocketClient):
-    def opened(self, protocols, extensions):
-        WebSocketClient.opened(self, protocols, extensions)
-        print "Connected."
-
-    def received_message(self, m):
-        print m
+from . import client
+from . import server
 
 def main():
-    url = sys.argv[1]
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('url', metavar='URL', type=str,
+            help='URL of a WebSocket endpoint with or without ws:// or wss://')
+    parser.add_argument('-l', action='store_true', 
+            help='start in listen mode, creating a server')
+    args = parser.parse_args()
 
-    try:
-        try:
-            ws = CommandLineClient(url)
-            ws.connect()
-        except HandshakeError, e:
-            print e
-            sys.exit(1)
-        while True:
-            ws.send(raw_input())
-    except KeyboardInterrupt:
-        ws.close()
+    url = args.url
+    if not url.startswith("ws://") and not url.startswith("wss://"):
+        url = "ws://{}".format(url)
+    url = urlparse(url)
 
+    if args.l:
+        server.listen(url.port, url.path)
+    else:
+        client.connect(url.hostname, url.port, url.path)
+
+    

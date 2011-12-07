@@ -16,12 +16,3 @@ Once connected you can use STDIN to send messages. Each line is a message. You c
 
 	wssh localhost:8000/websocket
 
-You can also connect using secure WebSocket by using a full URI (assuming the server accepts it):
-
-	wssh wss://localhost:8000/websocket
-
-You can pipe a message into wssh like netcat to connect, send the message, and disconnect:
-
-	echo "Hello world" | wssh localhost:8000/websocket
-
-
