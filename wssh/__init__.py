@@ -18,9 +18,16 @@ def main():
         url = "ws://{}".format(url)
     url = urlparse(url)
 
+    port = url.port
+    if port == None:
+        if url.scheme == "wss":
+            port = 443
+        else:
+            port = 80
+
     if args.l:
-        server.listen(url.port, url.path)
+        server.listen(port, url.path)
     else:
-        client.connect(url.hostname, url.port, url.path)
+        client.connect(url.hostname, port, url.path)
 
     
