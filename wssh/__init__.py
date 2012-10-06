@@ -28,9 +28,10 @@ def main():
         else:
             port = 80
 
-    if args.l:
-        server.listen(port, url.path)
-    else:
-        client.connect(url.hostname, port, url.path)
-
-    
+    try:
+        if args.l:
+            server.listen(port, url.path)
+        else:
+            client.connect(url.hostname, port, url.path)
+    except KeyboardInterrupt:
+        pass
