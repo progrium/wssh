@@ -1,39 +1,62 @@
-import sys
-import os
-import fcntl
 import gevent
-from gevent.socket import wait_read
-from urlparse import urlparse
+from gevent.event import Event
 
-import gevent
+from ws4py.server.geventserver import UpgradableWSGIHandler
+from ws4py.server.wsgi.middleware import WebSocketUpgradeMiddleware
+from ws4py.websocket import WebSocket
 
-from ws4py.exc import HandshakeError
-from ws4py.server.geventserver import WebSocketServer
+from . import common
 
-def handler(path):
-    def handle(websocket, environ):
-        if path and environ.get('PATH_INFO', '') != path:
-            websocket.close()
-            return
-        def incoming():
-            while True:
-                msg = websocket.receive()
-                if msg is not None:
-                    print msg
-                else:
-                    websocket.close()
-        def outgoing():
-            fcntl.fcntl(sys.stdin, fcntl.F_SETFL, os.O_NONBLOCK)
-            while True:
-                wait_read(sys.stdin.fileno())
-                line = sys.stdin.readline()
-                websocket.send(line.strip())
-        gevent.joinall([
-            gevent.spawn(incoming),
-            gevent.spawn(outgoing),
-        ])
-    return handle
+# Handles the WebSocket once it has been upgraded by the HTTP layer.
+class StdioPipedWebSocket(WebSocket):
+    def received_message(self, m):
+        common.received_message(self, m)
+
+    def opened(self):
+        common.opened(self)
+
+    def closed(self, code, reason):
+        pass
+
+# Simple HTTP server implementing only one endpoint which upgrades to the
+# stdin/stdout connected WebSocket.
+class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
+    handler_class = UpgradableWSGIHandler
+
+    def __init__(self, host, port, path):
+        gevent.pywsgi.WSGIServer.__init__(self, (host, port), log=None)
+
+        self.path = path
+        self.application = self
+        self.shutdown_cond = Event()
+
+        self.ws_upgrade = WebSocketUpgradeMiddleware(app=self.ws_handler,
+                websocket_class=StdioPipedWebSocket)
+
+    def __call__(self, environ, start_response):
+        if self.path and environ['PATH_INFO'] != self.path:
+            start_response('400 Not Found', [])
+        else:
+            # Hand-off the WebSocket upgrade negotiation to ws4py...
+            return self.ws_upgrade(environ, start_response)
+
+    def ws_handler(self, websocket):
+        # Stop accepting new connections after we receive our first one (a la
+        # netcat).
+        self.stop_accepting()
+
+        # Transfer control to the websocket_class.
+        g = gevent.spawn(websocket.run)
+        g.join()
+
+        # WebSocket connection terminated, exit program.
+        self.shutdown_cond.set()
+
+    def handle_one_websocket(self):
+        self.start()
+        self.shutdown_cond.wait()
 
 def listen(port, path=None):
-    server = WebSocketServer(('', port), handler(path))
-    server.serve_forever()
+    # XXX: Should add support to limit the listening interface.
+    server = SimpleWebSocketServer('', port, path)
+    server.handle_one_websocket()
