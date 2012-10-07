@@ -12,9 +12,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('url', metavar='URL', type=str,
             help='URL of a WebSocket endpoint with or without ws:// or wss://')
-    parser.add_argument('-l', action='store_true', 
+    parser.add_argument('-l', dest='listen', action='store_true', 
             help='start in listen mode, creating a server')
-    parser.add_argument('-q', metavar='secs', type=int,
+    parser.add_argument('-q', dest='quit_on_eof', metavar='secs', type=int,
             help='quit after EOF on stdin and delay of secs (0 allowed)')
     args = parser.parse_args()
 
@@ -31,7 +31,7 @@ def main():
             port = 80
 
     try:
-        if args.l:
+        if args.listen:
             server.listen(args, port, url.path)
         else:
             client.connect(args, url.hostname, port, url.path)

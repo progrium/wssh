@@ -33,9 +33,9 @@ class StdioPipedWebSocketHelper:
             # If -q was passed, shutdown the program after EOF and the
             # specified delay.  Otherwise, keep the socket open even with no
             # more input flowing (consistent with netcat's behaviour).
-            if self.opts.q is not None:
-                if self.opts.q > 0:
-                    gevent.sleep(self.opts.q)
+            if self.opts.quit_on_eof is not None:
+                if self.opts.quit_on_eof > 0:
+                    gevent.sleep(self.opts.quit_on_eof)
                 self.shutdown_cond.set()
 
         # XXX: We wait for the socket to open before reading stdin so that we
