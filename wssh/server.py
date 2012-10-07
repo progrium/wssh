@@ -1,3 +1,5 @@
+import sys
+
 import gevent
 from gevent.event import Event
 
@@ -65,9 +67,14 @@ class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
 
     def handle_one_websocket(self):
         self.start()
+        if self.opts.verbosity >= 1:
+            print >> sys.stderr, 'listening on [any] %d...' % self.port
         self.shutdown_cond.wait()
 
 def listen(args, port, path=None):
     # XXX: Should add support to limit the listening interface.
     server = SimpleWebSocketServer('', port, path, args)
-    server.handle_one_websocket()
+    try:
+        server.handle_one_websocket()
+    except IOError, e:
+        print >> sys.stderr, e
