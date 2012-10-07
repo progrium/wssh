@@ -9,11 +9,14 @@ from . import common
 
 # Handles the WebSocket once it has been upgraded by the HTTP layer.
 class StdioPipedWebSocket(WebSocket):
+    def attach_helper(self, helper):
+        self.iohelper = helper
+
     def received_message(self, m):
-        common.received_message(self, m)
+        self.iohelper.received_message(self, m)
 
     def opened(self):
-        common.opened(self)
+        self.iohelper.opened(self)
 
     def closed(self, code, reason):
         pass
@@ -23,12 +26,15 @@ class StdioPipedWebSocket(WebSocket):
 class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
     handler_class = UpgradableWSGIHandler
 
-    def __init__(self, host, port, path):
+    def __init__(self, host, port, path, opts):
         gevent.pywsgi.WSGIServer.__init__(self, (host, port), log=None)
 
         self.path = path
         self.application = self
+
         self.shutdown_cond = Event()
+        self.opts = opts
+        self.iohelper = common.StdioPipedWebSocketHelper(self.shutdown_cond, opts)
 
         self.ws_upgrade = WebSocketUpgradeMiddleware(app=self.ws_handler,
                 websocket_class=StdioPipedWebSocket)
@@ -45,6 +51,11 @@ class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
         # netcat).
         self.stop_accepting()
 
+        # Pass custom arguments over to our WebSocket instance.  The design of
+        # gevent's pywsgi layer leaves a lot to be desired in terms of proper
+        # dependency injection patterns...
+        websocket.attach_helper(self.iohelper)
+
         # Transfer control to the websocket_class.
         g = gevent.spawn(websocket.run)
         g.join()
@@ -56,7 +67,7 @@ class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
         self.start()
         self.shutdown_cond.wait()
 
-def listen(port, path=None):
+def listen(args, port, path=None):
     # XXX: Should add support to limit the listening interface.
-    server = SimpleWebSocketServer('', port, path)
+    server = SimpleWebSocketServer('', port, path, args)
     server.handle_one_websocket()

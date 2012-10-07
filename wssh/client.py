@@ -10,13 +10,19 @@ from . import common
 
 # Handles the WebSocket once it has been upgraded by the HTTP layer.
 class StdioPipedWebSocketClient(WebSocketClient):
-    shutdown_cond = Event()
+
+    def __init__(self, url, opts):
+        WebSocketClient.__init__(self, url)
+
+        self.shutdown_cond = Event()
+        self.opts = opts
+        self.iohelper = common.StdioPipedWebSocketHelper(self.shutdown_cond, opts)
 
     def received_message(self, m):
-        common.received_message(self, m)
+        self.iohelper.received_message(self, m)
 
     def opened(self):
-        common.opened(self)
+        self.iohelper.opened(self)
 
     def closed(self, code, reason):
         self.shutdown_cond.set()
@@ -25,8 +31,8 @@ class StdioPipedWebSocketClient(WebSocketClient):
         self.connect()
         self.shutdown_cond.wait()
 
-def connect(host, port, path='/'):
-    client = StdioPipedWebSocketClient("ws://{}:{}{}".format(host, port, path))
+def connect(args, host, port, path='/'):
+    client = StdioPipedWebSocketClient("ws://{}:{}{}".format(host, port, path), args)
     try:
         client.connect_and_wait()
     except (IOError, HandshakeError), e:

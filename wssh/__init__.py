@@ -3,17 +3,19 @@ if 'threading' in sys.modules:
     raise Exception('threading module loaded before patching!')
 import gevent.monkey; gevent.monkey.patch_thread()
 from urlparse import urlparse
+import argparse
 
 from . import client
 from . import server
 
 def main():
-    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('url', metavar='URL', type=str,
             help='URL of a WebSocket endpoint with or without ws:// or wss://')
     parser.add_argument('-l', action='store_true', 
             help='start in listen mode, creating a server')
+    parser.add_argument('-q', metavar='secs', type=int,
+            help='quit after EOF on stdin and delay of secs (0 allowed)')
     args = parser.parse_args()
 
     url = args.url
@@ -30,8 +32,8 @@ def main():
 
     try:
         if args.l:
-            server.listen(port, url.path)
+            server.listen(args, port, url.path)
         else:
-            client.connect(url.hostname, port, url.path)
+            client.connect(args, url.hostname, port, url.path)
     except KeyboardInterrupt:
         pass
