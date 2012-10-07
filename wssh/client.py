@@ -1,3 +1,5 @@
+import sys
+
 import gevent
 from gevent.event import Event
 
@@ -28,4 +30,4 @@ def connect(host, port, path='/'):
     try:
         client.connect_and_wait()
     except (IOError, HandshakeError), e:
-        print e
+        print >> sys.stderr, e
