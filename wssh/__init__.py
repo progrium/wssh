@@ -1,16 +1,23 @@
 import sys
+if 'threading' in sys.modules:
+    raise Exception('threading module loaded before patching!')
+import gevent.monkey; gevent.monkey.patch_thread()
 from urlparse import urlparse
+import argparse
 
 from . import client
 from . import server
 
 def main():
-    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('url', metavar='URL', type=str,
             help='URL of a WebSocket endpoint with or without ws:// or wss://')
-    parser.add_argument('-l', action='store_true', 
+    parser.add_argument('-l', dest='listen', action='store_true', 
             help='start in listen mode, creating a server')
+    parser.add_argument('-q', dest='quit_on_eof', metavar='secs', type=int,
+            help='quit after EOF on stdin and delay of secs (0 allowed)')
+    parser.add_argument('-v', dest='verbosity', action='count',
+            help='verbose (use twice to be more verbose)')
     args = parser.parse_args()
 
     url = args.url
@@ -18,9 +25,17 @@ def main():
         url = "ws://{}".format(url)
     url = urlparse(url)
 
-    if args.l:
-        server.listen(url.port, url.path)
-    else:
-        client.connect(url.hostname, url.port, url.path)
+    port = url.port
+    if port == None:
+        if url.scheme == "wss":
+            port = 443
+        else:
+            port = 80
 
-    
+    try:
+        if args.listen:
+            server.listen(args, port, url.path)
+        else:
+            client.connect(args, url.hostname, port, url.path)
+    except KeyboardInterrupt:
+        pass
