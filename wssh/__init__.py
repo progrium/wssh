@@ -16,6 +16,8 @@ def main():
             help='start in listen mode, creating a server')
     parser.add_argument('-q', dest='quit_on_eof', metavar='secs', type=int,
             help='quit after EOF on stdin and delay of secs (0 allowed)')
+    parser.add_argument('-v', dest='verbosity', action='count',
+            help='verbose (use twice to be more verbose)')
     args = parser.parse_args()
 
     url = args.url

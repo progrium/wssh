@@ -22,6 +22,9 @@ class StdioPipedWebSocketClient(WebSocketClient):
         self.iohelper.received_message(self, m)
 
     def opened(self):
+        if self.opts.verbosity >= 1:
+            peername, peerport = self.sock.getpeername()
+            print >> sys.stderr, "[%s] %d open" % (peername, peerport)
         self.iohelper.opened(self)
 
     def closed(self, code, reason):

@@ -11,13 +11,17 @@ from . import common
 
 # Handles the WebSocket once it has been upgraded by the HTTP layer.
 class StdioPipedWebSocket(WebSocket):
-    def attach_helper(self, helper):
+    def my_setup(self, helper, opts):
         self.iohelper = helper
+        self.opts = opts
 
     def received_message(self, m):
         self.iohelper.received_message(self, m)
 
     def opened(self):
+        if self.opts.verbosity >= 1:
+            peername, peerport = self.sock.getpeername()
+            print >> sys.stderr, "connect from [%s] %d" % (peername, peerport)
         self.iohelper.opened(self)
 
     def closed(self, code, reason):
@@ -31,6 +35,8 @@ class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
     def __init__(self, host, port, path, opts):
         gevent.pywsgi.WSGIServer.__init__(self, (host, port), log=None)
 
+        self.host = host
+        self.port = port
         self.path = path
         self.application = self
 
@@ -56,7 +62,7 @@ class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
         # Pass custom arguments over to our WebSocket instance.  The design of
         # gevent's pywsgi layer leaves a lot to be desired in terms of proper
         # dependency injection patterns...
-        websocket.attach_helper(self.iohelper)
+        websocket.my_setup(self.iohelper, self.opts)
 
         # Transfer control to the websocket_class.
         g = gevent.spawn(websocket.run)
