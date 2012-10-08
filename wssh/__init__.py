@@ -25,6 +25,7 @@ def main():
         url = "ws://{}".format(url)
     url = urlparse(url)
 
+    # Apply an appropriate default port.
     port = url.port
     if port == None:
         if url.scheme == "wss":
@@ -32,10 +33,17 @@ def main():
         else:
             port = 80
 
+    # Translate an empty path to None, triggering the default behaviour for
+    # both client and server (which differ in their treatment of the default
+    # case).
+    path = url.path
+    if url.path == '':
+        path = None
+
     try:
         if args.listen:
-            server.listen(args, port, url.path)
+            server.listen(args, port, path)
         else:
-            client.connect(args, url.hostname, port, url.path)
+            client.connect(args, url.hostname, port, path)
     except KeyboardInterrupt:
         pass
