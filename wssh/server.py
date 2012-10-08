@@ -48,8 +48,12 @@ class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
                 websocket_class=StdioPipedWebSocket)
 
     def __call__(self, environ, start_response):
-        if self.path and environ['PATH_INFO'] != self.path:
+        request_path = environ['PATH_INFO']
+        if self.path and request_path != self.path:
+            if self.opts.verbosity >= 2:
+                print "refusing to serve request for path '%s'" % request_path
             start_response('400 Not Found', [])
+            return ['']
         else:
             # Hand-off the WebSocket upgrade negotiation to ws4py...
             return self.ws_upgrade(environ, start_response)
