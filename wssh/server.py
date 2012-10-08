@@ -74,10 +74,14 @@ class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
     def handle_one_websocket(self):
         self.start()
         if self.opts.verbosity >= 1:
-            print >> sys.stderr, 'listening on [any] %d...' % self.port
+            if self.path:
+                path_stmt = "path '%s'" % (self.path)
+            else:
+                path_stmt = 'all paths'
+            print >> sys.stderr, 'listening on [any] %d for %s...' % (self.port, path_stmt)
         self.shutdown_cond.wait()
 
-def listen(args, port, path=None):
+def listen(args, port, path):
     # XXX: Should add support to limit the listening interface.
     server = SimpleWebSocketServer('', port, path, args)
     try:

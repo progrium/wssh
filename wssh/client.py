@@ -11,9 +11,11 @@ from . import common
 # Handles the WebSocket once it has been upgraded by the HTTP layer.
 class StdioPipedWebSocketClient(WebSocketClient):
 
-    def __init__(self, url, opts):
+    def __init__(self, host, port, path, opts):
+        url = "ws://{}:{}{}".format(host, port, path)
         WebSocketClient.__init__(self, url)
 
+        self.path = path
         self.shutdown_cond = Event()
         self.opts = opts
         self.iohelper = common.StdioPipedWebSocketHelper(self.shutdown_cond, opts)
@@ -24,7 +26,7 @@ class StdioPipedWebSocketClient(WebSocketClient):
     def opened(self):
         if self.opts.verbosity >= 1:
             peername, peerport = self.sock.getpeername()
-            print >> sys.stderr, "[%s] %d open" % (peername, peerport)
+            print >> sys.stderr, "[%s] %d open for path '%s'" % (peername, peerport, self.path)
         self.iohelper.opened(self)
 
     def closed(self, code, reason):
@@ -34,8 +36,10 @@ class StdioPipedWebSocketClient(WebSocketClient):
         self.connect()
         self.shutdown_cond.wait()
 
-def connect(args, host, port, path='/'):
-    client = StdioPipedWebSocketClient("ws://{}:{}{}".format(host, port, path), args)
+def connect(args, host, port, path):
+    if path == None:
+        path = '/'
+    client = StdioPipedWebSocketClient(host, port, path, args)
     try:
         client.connect_and_wait()
     except (IOError, HandshakeError), e:
