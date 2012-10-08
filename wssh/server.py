@@ -48,8 +48,12 @@ class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
                 websocket_class=StdioPipedWebSocket)
 
     def __call__(self, environ, start_response):
-        if self.path and environ['PATH_INFO'] != self.path:
+        request_path = environ['PATH_INFO']
+        if self.path and request_path != self.path:
+            if self.opts.verbosity >= 2:
+                print "refusing to serve request for path '%s'" % request_path
             start_response('400 Not Found', [])
+            return ['']
         else:
             # Hand-off the WebSocket upgrade negotiation to ws4py...
             return self.ws_upgrade(environ, start_response)
@@ -74,10 +78,14 @@ class SimpleWebSocketServer(gevent.pywsgi.WSGIServer):
     def handle_one_websocket(self):
         self.start()
         if self.opts.verbosity >= 1:
-            print >> sys.stderr, 'listening on [any] %d...' % self.port
+            if self.path:
+                path_stmt = "path '%s'" % (self.path)
+            else:
+                path_stmt = 'all paths'
+            print >> sys.stderr, 'listening on [any] %d for %s...' % (self.port, path_stmt)
         self.shutdown_cond.wait()
 
-def listen(args, port, path=None):
+def listen(args, port, path):
     # XXX: Should add support to limit the listening interface.
     server = SimpleWebSocketServer('', port, path, args)
     try:
