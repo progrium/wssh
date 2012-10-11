@@ -22,7 +22,7 @@ def main():
 
     url = args.url
     if not url.startswith("ws://") and not url.startswith("wss://"):
-        url = "ws://{}".format(url)
+        url = "ws://{0}".format(url)
     url = urlparse(url)
 
     # Apply an appropriate default port.
