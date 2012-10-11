@@ -12,7 +12,7 @@ from . import common
 class StdioPipedWebSocketClient(WebSocketClient):
 
     def __init__(self, host, port, path, opts):
-        url = "ws://{}:{}{}".format(host, port, path)
+        url = "ws://{0}:{1}{2}".format(host, port, path)
         WebSocketClient.__init__(self, url)
 
         self.path = path
