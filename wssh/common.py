@@ -2,6 +2,8 @@ import sys
 import os
 import fcntl
 
+import string
+
 import gevent
 from gevent.socket import wait_read
 
@@ -15,10 +17,22 @@ class StdioPipedWebSocketHelper:
     def __init__(self, shutdown_cond, opts):
         self.shutdown_cond = shutdown_cond
         self.opts = opts
+        if self.opts.text_mode == 'auto':
+            # This represents all printable, ASCII characters.  Only these
+            # characters can pass through as a WebSocket text frame.
+            self.textset = set(c for c in string.printable if ord(c) < 128)
 
     def received_message(self, websocket, m):
         sys.stdout.write(m.data)
         sys.stdout.flush()
+
+    def should_send_binary_frame(self, buf):
+        if self.opts.text_mode == 'auto':
+            return not set(buf).issubset(self.textset)
+        elif self.opts.text_mode == 'text':
+            return False
+        else:
+            return True
 
     def opened(self, websocket):
         def connect_stdin():
@@ -28,8 +42,8 @@ class StdioPipedWebSocketHelper:
                 buf = sys.stdin.read(4096)
                 if len(buf) == 0:
                     break
-                # XXX: Always send the data as binary, regardless of what it really is.
-                websocket.send(buf, True)
+                binary=self.should_send_binary_frame(buf)
+                websocket.send(buf, binary)
             # If -q was passed, shutdown the program after EOF and the
             # specified delay.  Otherwise, keep the socket open even with no
             # more input flowing (consistent with netcat's behaviour).
