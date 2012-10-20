@@ -50,6 +50,10 @@ class StdioPipedWebSocketHelper:
                     mode_msg = 'binary' if binary else 'text'
                     print >> sys.stderr, "[sending payload of length %d as %s]" % (len(buf), mode_msg)
                 websocket.send(buf, binary)
+
+            if self.opts.verbosity >= 2:
+                print >> sys.stderr, '[EOF on stdin, shutting down input]'
+
             # If -q was passed, shutdown the program after EOF and the
             # specified delay.  Otherwise, keep the socket open even with no
             # more input flowing (consistent with netcat's behaviour).
