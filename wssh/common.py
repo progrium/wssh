@@ -23,6 +23,9 @@ class StdioPipedWebSocketHelper:
             self.textset = set(c for c in string.printable if ord(c) < 128)
 
     def received_message(self, websocket, m):
+        if self.opts.verbosity >= 3:
+            mode_msg = 'binary' if m.is_binary else 'text'
+            print >> sys.stderr, "[received payload of length %d as %s]" % (len(m.data), mode_msg)
         sys.stdout.write(m.data)
         sys.stdout.flush()
 
@@ -43,6 +46,9 @@ class StdioPipedWebSocketHelper:
                 if len(buf) == 0:
                     break
                 binary=self.should_send_binary_frame(buf)
+                if self.opts.verbosity >= 3:
+                    mode_msg = 'binary' if binary else 'text'
+                    print >> sys.stderr, "[sending payload of length %d as %s]" % (len(buf), mode_msg)
                 websocket.send(buf, binary)
             # If -q was passed, shutdown the program after EOF and the
             # specified delay.  Otherwise, keep the socket open even with no
