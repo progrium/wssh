@@ -17,6 +17,8 @@ def main():
     parser.add_argument('-m', dest='text_mode', type=str, default='auto',
             choices=['text', 'binary', 'auto'],
             help='specify the message transmit mode (default: auto)')
+    parser.add_argument('-n', dest='new_lines', action='store_true', 
+            help='separate each received message with a newline')
     parser.add_argument('-q', dest='quit_on_eof', metavar='secs', type=int,
             help='quit after EOF on stdin and delay of secs (0 allowed)')
     parser.add_argument('-v', dest='verbosity', action='count',
