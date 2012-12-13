@@ -27,6 +27,8 @@ class StdioPipedWebSocketHelper:
             mode_msg = 'binary' if m.is_binary else 'text'
             print >> sys.stderr, "[received payload of length %d as %s]" % (len(m.data), mode_msg)
         sys.stdout.write(m.data)
+        if self.opts.new_lines:
+          sys.stdout.write("\n")
         sys.stdout.flush()
 
     def should_send_binary_frame(self, buf):
