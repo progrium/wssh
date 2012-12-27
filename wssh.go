@@ -1,16 +1,17 @@
 package main
 
 import (
-	"code.google.com/p/go.net/websocket"
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
-  "net/url"
-  "strings"
-  "log"
+	"strings"
+
+	"code.google.com/p/go.net/websocket"
 )
 
 var ignoreEof *bool = flag.Bool("i", false, "Ignore EOF on STDIN")
@@ -58,11 +59,11 @@ func listen(url *url.URL) {
 func main() {
 	flag.Parse()
 
-  arg := flag.Arg(0)
-  if !strings.Contains(arg, "://") {
-    arg = "ws://" + arg
-  }
-  url, err := url.Parse(arg)
+	arg := flag.Arg(0)
+	if !strings.Contains(arg, "://") {
+		arg = "ws://" + arg
+	}
+	url, err := url.Parse(arg)
 	if err != nil {
 		log.Fatal(err)
 	}
