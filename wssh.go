@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -43,8 +42,7 @@ func connect(url *url.URL) {
 }
 
 func listen(url *url.URL) {
-	_, port, err := net.SplitHostPort(url.Host)
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	l, err := net.Listen("tcp", url.Host)
 	if err != nil {
 		log.Fatalf("listen: %v", err)
 	} else {
