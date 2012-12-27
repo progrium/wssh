@@ -17,19 +17,19 @@ import (
 var ignoreEof *bool = flag.Bool("i", false, "Ignore EOF on STDIN")
 var listenMode *bool = flag.Bool("l", false, "Listen mode (run a server)")
 
-func attach(ws *websocket.Conn) chan bool {
-	eof := make(chan bool, 1)
+func attach(ws *websocket.Conn) chan error {
+	err := make(chan error, 2)
 	go func() {
-		io.Copy(os.Stdout, ws)
-		eof <- true
+		_, e := io.Copy(os.Stdout, ws)
+		err <- e
 	}()
 	go func() {
-		io.Copy(ws, os.Stdin)
+		_, e := io.Copy(ws, os.Stdin)
 		if !*ignoreEof {
-			eof <- true
+			err <- e
 		}
 	}()
-	return eof
+	return err
 }
 
 func connect(url *url.URL) {
