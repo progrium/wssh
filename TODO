@@ -1,0 +1,6 @@
+* mode for stdin; text/binary/auto
+* verbose mode
+* newlines between messages?
+* support wss
+* --help
+* readme 
