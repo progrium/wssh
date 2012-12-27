@@ -8,9 +8,11 @@ import (
 	"net"
 	"net/http"
 	"os"
+  "net/url"
+  "strings"
+  "log"
 )
 
-var port *int = flag.Int("p", 23456, "Port to listen/connect on")
 var ignoreEof *bool = flag.Bool("i", false, "Ignore EOF on STDIN")
 var listenMode *bool = flag.Bool("l", false, "Listen mode (run a server)")
 
@@ -29,21 +31,22 @@ func attach(ws *websocket.Conn) chan bool {
 	return eof
 }
 
-func connect() {
+func connect(url *url.URL) {
 	origin := "http://localhost/"
-	url := fmt.Sprintf("ws://localhost:%d/", *port)
-	ws, err := websocket.Dial(url, "", origin)
+	ws, err := websocket.Dial(url.String(), "", origin)
 	defer ws.Close()
 	if err != nil {
-		panic("connect: " + err.Error())
+		log.Fatal("connect: " + err.Error())
 	}
 	<-attach(ws)
 }
 
-func listen() {
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+
+func listen(url *url.URL) {
+  _, port, err := net.SplitHostPort(url.Host)
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		panic("listen: " + err.Error())
+		log.Fatal("listen: " + err.Error())
 	} else {
 		http.Serve(l, websocket.Handler(func(ws *websocket.Conn) {
 			defer l.Close()
@@ -54,12 +57,20 @@ func listen() {
 
 func main() {
 	flag.Parse()
-	fmt.Printf("http://localhost:%d/\n", *port)
+
+  arg := flag.Arg(0)
+  if !strings.Contains(arg, "://") {
+    arg = "ws://" + arg
+  }
+  url, err := url.Parse(arg)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	if *listenMode {
-		listen()
+		listen(url)
 	} else {
-		connect()
+		connect(url)
 	}
 
 }
