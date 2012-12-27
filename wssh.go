@@ -1,34 +1,42 @@
 package main
 
 import (
-	"code.google.com/p/go.net/websocket"
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
-  "net/url"
-  "strings"
-  "log"
+	"strings"
+
+	"code.google.com/p/go.net/websocket"
 )
 
 var ignoreEof *bool = flag.Bool("i", false, "Ignore EOF on STDIN")
 var listenMode *bool = flag.Bool("l", false, "Listen mode (run a server)")
 
-func attach(ws *websocket.Conn) chan bool {
-	eof := make(chan bool, 1)
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage:  %v ws://address/\n\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+}
+
+func attach(ws *websocket.Conn) chan error {
+	err := make(chan error, 2)
 	go func() {
-		io.Copy(os.Stdout, ws)
-		eof <- true
+		_, e := io.Copy(os.Stdout, ws)
+		err <- e
 	}()
 	go func() {
-		io.Copy(ws, os.Stdin)
+		_, e := io.Copy(ws, os.Stdin)
 		if !*ignoreEof {
-			eof <- true
+			err <- e
 		}
 	}()
-	return eof
+	return err
 }
 
 func connect(url *url.URL) {
@@ -36,17 +44,15 @@ func connect(url *url.URL) {
 	ws, err := websocket.Dial(url.String(), "", origin)
 	defer ws.Close()
 	if err != nil {
-		log.Fatal("connect: " + err.Error())
+		log.Fatalf("connect: %v", err)
 	}
 	<-attach(ws)
 }
 
-
 func listen(url *url.URL) {
-  _, port, err := net.SplitHostPort(url.Host)
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	l, err := net.Listen("tcp", url.Host)
 	if err != nil {
-		log.Fatal("listen: " + err.Error())
+		log.Fatalf("listen: %v", err)
 	} else {
 		http.Serve(l, websocket.Handler(func(ws *websocket.Conn) {
 			defer l.Close()
@@ -58,11 +64,16 @@ func listen(url *url.URL) {
 func main() {
 	flag.Parse()
 
-  arg := flag.Arg(0)
-  if !strings.Contains(arg, "://") {
-    arg = "ws://" + arg
-  }
-  url, err := url.Parse(arg)
+	if flag.NArg() < 1 {
+		flag.Usage()
+		os.Exit(64)
+	}
+
+	arg := flag.Arg(0)
+	if !strings.Contains(arg, "://") {
+		arg = "ws://" + arg
+	}
+	url, err := url.Parse(arg)
 	if err != nil {
 		log.Fatal(err)
 	}
