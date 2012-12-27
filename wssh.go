@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -15,6 +16,13 @@ import (
 
 var ignoreEof *bool = flag.Bool("i", false, "Ignore EOF on STDIN")
 var listenMode *bool = flag.Bool("l", false, "Listen mode (run a server)")
+
+func init() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage:  %v ws://address/\n\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+}
 
 func attach(ws *websocket.Conn) chan error {
 	err := make(chan error, 2)
@@ -55,6 +63,11 @@ func listen(url *url.URL) {
 
 func main() {
 	flag.Parse()
+
+	if flag.NArg() < 1 {
+		flag.Usage()
+		os.Exit(64)
+	}
 
 	arg := flag.Arg(0)
 	if !strings.Contains(arg, "://") {
