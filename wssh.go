@@ -37,17 +37,16 @@ func connect(url *url.URL) {
 	ws, err := websocket.Dial(url.String(), "", origin)
 	defer ws.Close()
 	if err != nil {
-		log.Fatal("connect: " + err.Error())
+		log.Fatalf("connect: %v", err)
 	}
 	<-attach(ws)
 }
 
-
 func listen(url *url.URL) {
-  _, port, err := net.SplitHostPort(url.Host)
+	_, port, err := net.SplitHostPort(url.Host)
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		log.Fatal("listen: " + err.Error())
+		log.Fatalf("listen: %v", err)
 	} else {
 		http.Serve(l, websocket.Handler(func(ws *websocket.Conn) {
 			defer l.Close()
