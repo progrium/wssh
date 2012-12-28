@@ -26,12 +26,19 @@ def main():
     args = parser.parse_args()
 
     url = args.url
+    # Keep track of whether we are artificially assuming non-wss
+    noscheme = False
     if not url.startswith("ws://") and not url.startswith("wss://"):
+        noscheme = True
         url = "ws://{0}".format(url)
     url = urlparse(url)
 
-    # Apply an appropriate default port.
+    # If we added non-wss ourselves but the user picked port 443, they almost certainly wanted wss
+    if noscheme and url.port == 443:
+        url = urlparse("wss://{0}:443{1}".format(url.hostname, url.path))
+
     port = url.port
+    # Apply an appropriate default port.
     if port == None:
         if url.scheme == "wss":
             port = 443
@@ -49,6 +56,6 @@ def main():
         if args.listen:
             server.listen(args, port, path)
         else:
-            client.connect(args, url.hostname, port, path)
+            client.connect(args, url.scheme, url.hostname, port, path)
     except KeyboardInterrupt:
         pass
