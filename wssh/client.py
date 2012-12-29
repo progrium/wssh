@@ -11,8 +11,8 @@ from . import common
 # Handles the WebSocket once it has been upgraded by the HTTP layer.
 class StdioPipedWebSocketClient(WebSocketClient):
 
-    def __init__(self, host, port, path, opts):
-        url = "ws://{0}:{1}{2}".format(host, port, path)
+    def __init__(self, scheme, host, port, path, opts):
+        url = "{0}://{1}:{2}{3}".format(scheme, host, port, path)
         WebSocketClient.__init__(self, url)
 
         self.path = path
@@ -36,10 +36,10 @@ class StdioPipedWebSocketClient(WebSocketClient):
         self.connect()
         self.shutdown_cond.wait()
 
-def connect(args, host, port, path):
+def connect(args, scheme, host, port, path):
     if path == None:
         path = '/'
-    client = StdioPipedWebSocketClient(host, port, path, args)
+    client = StdioPipedWebSocketClient(scheme, host, port, path, args)
     try:
         client.connect_and_wait()
     except (IOError, HandshakeError), e:
