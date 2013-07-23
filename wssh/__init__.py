@@ -51,6 +51,8 @@ def main():
     path = url.path
     if url.path == '':
         path = None
+    elif url.query:
+        path = "{0}?{1}".format(path, url.query)
 
     try:
         if args.listen:
