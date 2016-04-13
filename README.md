@@ -1,12 +1,12 @@
 # wssh - websocket shell
 
-wssh ("wish") is a command-line utility/shell for WebSocket inpsired by netcat.
+wssh ("wish") is a command-line utility/shell for WebSocket inspired by netcat.
 
 ## Install
 
 - Assumes Python 2.7
 
-It uses currently uses gevent 0.13, so you may need to install libevent. This is because it uses the great work in [ws4py](https://github.com/Lawouach/WebSocket-for-Python). My gevent websocket server+client in there could probably be generalized to work with Eventlet; then this could be trivially ported to Eventlet to drop the libevent dependency.
+It currently uses gevent 0.13, so you may need to install libevent. This is because it uses the great work in [ws4py](https://github.com/Lawouach/WebSocket-for-Python). My gevent websocket server+client in there could probably be generalized to work with Eventlet; then this could be trivially ported to Eventlet to drop the libevent dependency.
 
 If you don't have libevent installed already, install it prior to running setup.py. You can install libevent using `apt-get` on Ubuntu or `brew` on a Mac. 
 
